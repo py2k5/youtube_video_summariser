@@ -1,0 +1,62 @@
+name: Deploy Lambda (Terraform)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::248189908610:role/GithubOIDCRole
+          aws-region: us-east-1
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install Python deps into build_dir
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -t build_dir || true
+
+      - name: Prepare deployment package
+        run: |
+          rm -rf build
+          mkdir -p build
+          if [ -d build_dir ]; then cp -r build_dir/* build/ || true; fi
+          mkdir -p build/src
+          cp -r src/* build/src/
+          pushd build
+          zip -r ../deployment_package.zip . > /dev/null
+          popd
+          ls -lh deployment_package.zip
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.7"
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        working-directory: terraform
+        env:
+          TF_VAR_google_api_key: ${{ secrets.GOOGLE_API_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: terraform apply -auto-approve -input=false
