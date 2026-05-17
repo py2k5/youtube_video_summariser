@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: YouTube Video Summarizer Lambda Function
+
+Resources:
+  YouTubeSummarizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handler.lambda_handler
+      Runtime: python3.8
+      CodeUri: src/
+      MemorySize: 128
+      Timeout: 30
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Environment:
+        GOOGLE_API_KEY: !Ref GoogleApiKey
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /summarize
+            Method: post
+
+Parameters:
+  GoogleApiKey:
+    Type: String
+    Description: Your Google API Key for accessing the Generative AI model.

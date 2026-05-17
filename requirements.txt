@@ -1,0 +1,4 @@
+youtube-transcript-api
+langchain-google-genai
+boto3
+requests
