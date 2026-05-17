@@ -9,7 +9,7 @@ on:
 permissions:
   id-token: write
   contents: read
-  
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -28,18 +28,35 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Python deps into build_dir
+      - name: Install Python deps for layer
+        run: |
+          python -m pip install --upgrade pip
+          rm -rf layer_build
+          mkdir -p layer_build/python/lib/python3.12/site-packages
+          pip install -r requirements.txt -t layer_build/python/lib/python3.12/site-packages
+
+      - name: Prepare Lambda layer package
+        run: |
+          rm -f layer_package.zip
+          pushd layer_build
+          zip -r ../layer_package.zip . > /dev/null
+          popd
+          ls -lh layer_package.zip
+
+      - name: Install Python deps into build_dir (if you need any runtime-only local files)
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt -t build_dir || true
 
-      - name: Prepare deployment package
+      - name: Prepare deployment package (code only)
         run: |
           rm -rf build
           mkdir -p build
           if [ -d build_dir ]; then cp -r build_dir/* build/ || true; fi
           mkdir -p build/src
           cp -r src/* build/src/
+          # Remove large libs that are included in layer to avoid duplication
+          # (optional) e.g. rm -rf build/src/.venv
           pushd build
           zip -r ../deployment_package.zip . > /dev/null
           popd

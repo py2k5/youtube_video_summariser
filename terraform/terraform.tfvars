@@ -1,0 +1,1 @@
+existing_role_name = "youtube_summarizer_lambda_role"
