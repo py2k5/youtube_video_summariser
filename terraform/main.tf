@@ -21,13 +21,8 @@ provider "aws" {
 }
 
 # If user provided an existing role name, read it. Otherwise create the role.
-data "aws_iam_role" "existing" {
-  count = var.existing_role_name != "" ? 1 : 0
-  name  = var.existing_role_name
-}
 
 resource "aws_iam_role" "lambda_role" {
-  count = var.existing_role_name == "" ? 1 : 0
 
   name = "youtube_summarizer_lambda_role"
   assume_role_policy = jsonencode({
@@ -40,13 +35,8 @@ resource "aws_iam_role" "lambda_role" {
   })
 }
 
-locals {
-  lambda_role_arn  = var.existing_role_name != "" ? data.aws_iam_role.existing[0].arn : aws_iam_role.lambda_role[0].arn
-  lambda_role_name = var.existing_role_name != "" ? data.aws_iam_role.existing[0].name : aws_iam_role.lambda_role[0].name
-}
-
 resource "aws_iam_role_policy_attachment" "lambda_basic_exec" {
-  role       = local.lambda_role_name
+  role       = aws_iam_role.lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
@@ -61,7 +51,7 @@ resource "aws_lambda_layer_version" "dependencies_layer" {
 resource "aws_lambda_function" "youtube_summarizer" {
   filename         = "../deployment_package.zip"
   function_name    = "youtube-summarizer"
-  role             = local.lambda_role_arn
+  role             = aws_iam_role.lambda_role.arn
   handler          = "src/handler.lambda_handler"
   runtime          = "python3.12"
   memory_size      = 128
