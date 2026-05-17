@@ -1,3 +1,14 @@
+variable "tf_state_bucket" {
+  type        = string
+  description = "S3 bucket for Terraform state"
+}
+
+variable "tf_state_key" {
+  type        = string
+  description = "S3 key for Terraform state file"
+  default     = "terraform.tfstate"
+}
+
 variable "google_api_key" {
   description = "Google API Key for Generative AI"
   type        = string
