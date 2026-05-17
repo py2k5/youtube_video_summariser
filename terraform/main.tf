@@ -39,7 +39,7 @@ locals {
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_basic_exec" {
-  role       = local.lambda_role.name
+  role       = local.lambda_role_name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
@@ -54,7 +54,7 @@ resource "aws_lambda_layer_version" "dependencies_layer" {
 resource "aws_lambda_function" "youtube_summarizer" {
   filename         = "../deployment_package.zip"
   function_name    = "youtube-summarizer"
-  role             = local.lambda_role.arn
+  role             = local.lambda_role_arn
   handler          = "src/handler.lambda_handler"
   runtime          = "python3.12"
   memory_size      = 128
@@ -72,4 +72,3 @@ resource "aws_lambda_function" "youtube_summarizer" {
     aws_lambda_layer_version.dependencies_layer.arn
   ]
 }
-# ...existing code...
